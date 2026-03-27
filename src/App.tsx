@@ -1,9 +1,11 @@
 import React from 'react';
+import { BrowserRouter } from 'react-router-dom';
 import { useSubdomain } from './contexts/SubdomainContext';
 import { SubdomainSwitcher } from './components/SubdomainSwitcher';
 import { AdminPortal } from './components/AdminPortal';
 import { DriverOnboardingForm } from './components/public/DriverOnboardingForm';
 import { FleetLayout } from './components/fleet/FleetLayout';
+import { ClientLayout } from './components/client/ClientLayout';
 
 // Placeholder Pages
 const PublicSite = () => (
@@ -25,22 +27,14 @@ const PublicSite = () => (
 );
 
 const AppPortal = () => (
-  <div className="min-h-screen bg-[#F8FAFC] text-[#1E293B] flex flex-col items-center justify-center p-8 text-center">
-    <div className="w-full max-w-4xl bg-white p-12 rounded-2xl shadow-sm border border-[#E2E8F0]">
-      <h1 className="text-4xl font-sans font-bold mb-4 text-[#FF4D00]">The Portal</h1>
-      <p className="text-lg text-gray-500 mb-8">
-        Clean. Productive. Data-dense. This is the App Portal (app.)
-      </p>
-      <div className="grid grid-cols-3 gap-6">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="h-32 bg-[#F1F5F9] rounded-xl animate-pulse" />
-        ))}
-      </div>
+  <BrowserRouter>
+    <div className="min-h-screen bg-background">
+      <ClientLayout />
     </div>
-  </div>
+  </BrowserRouter>
 );
 
-import { BrowserRouter } from 'react-router-dom';
+
 
 // ... (rest of the file)
 
@@ -63,7 +57,11 @@ export default function App() {
       {subdomain === 'www' && <PublicSite />}
       {subdomain === 'onboarding' && <DriverOnboardingForm />}
       {subdomain === 'app' && <AppPortal />}
-      {subdomain === 'admin' && <AdminPortal />}
+      {subdomain === 'admin' && (
+        <BrowserRouter>
+          <AdminPortal />
+        </BrowserRouter>
+      )}
       {subdomain === 'fleet' && <FleetPortal />}
       
       {/* Dev Switcher for previewing subdomains */}

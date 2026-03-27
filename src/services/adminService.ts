@@ -360,7 +360,7 @@ export const adminService = {
         *,
         fleet_owner_settings (*),
         cars (id),
-        bookings (total_price, status)
+        bookings (total_amount, status)
       `)
       .eq('role', 'fleet_owner');
       
@@ -374,7 +374,7 @@ export const adminService = {
     return (owners || []).map(owner => {
       const ownerTx = transactions?.filter(t => t.user_id === owner.id) || [];
       const totalEarnings = owner.bookings?.filter((b: any) => b.status === 'completed' || b.status === 'confirmed')
-        .reduce((sum: number, b: any) => sum + Number(b.total_price), 0) || 0;
+        .reduce((sum: number, b: any) => sum + Number(b.total_amount), 0) || 0;
         
       const pendingPayouts = ownerTx.filter(t => t.status === 'pending')
         .reduce((sum: number, t: any) => sum + Math.abs(Number(t.amount)), 0);
@@ -526,7 +526,7 @@ export const adminService = {
     try {
       const { data: transactions, error: tError } = await supabase
         .from('transactions')
-        .select('*, bookings(total_price)')
+        .select('*, bookings(total_amount)')
         .order('created_at', { ascending: false });
       if (tError) throw tError;
 

@@ -228,7 +228,7 @@ export function AdminPaymentApprovals() {
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Total Amount Due</p>
-                    <p className="text-sm font-bold">KES {Number(selectedPayment.bookings?.total_price || 0).toLocaleString()}</p>
+                    <p className="text-sm font-bold">KES {Number(selectedPayment.bookings?.total_amount || 0).toLocaleString()}</p>
                   </div>
                   <div className="col-span-2">
                     <p className="text-xs text-muted-foreground">Dates</p>

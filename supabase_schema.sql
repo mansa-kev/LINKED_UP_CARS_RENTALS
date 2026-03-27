@@ -49,9 +49,14 @@ CREATE TABLE IF NOT EXISTS user_profiles (
   full_name TEXT,
   phone_number TEXT,
   email TEXT,
+  address TEXT,
+  license_number TEXT,
   status TEXT DEFAULT 'active',
   last_login TIMESTAMPTZ,
   role user_role NOT NULL DEFAULT 'client',
+  loyalty_tier TEXT DEFAULT 'Bronze', -- 'Bronze', 'Silver', 'Gold', 'Platinum'
+  referral_credits NUMERIC DEFAULT 0,
+  avatar_url TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -63,6 +68,20 @@ CREATE TABLE IF NOT EXISTS fleet_owner_settings (
   commission_rate NUMERIC DEFAULT 0.15,
   payout_method TEXT,
   payout_details JSONB,
+  tax_id TEXT,
+  support_email TEXT,
+  support_phone TEXT,
+  vat_status BOOLEAN DEFAULT FALSE,
+  vat_rate NUMERIC DEFAULT 0.16,
+  fuel_policy TEXT DEFAULT 'Full to Full',
+  late_return_grace_period INTEGER DEFAULT 60, -- in minutes
+  late_return_penalty_multiplier NUMERIC DEFAULT 1.5,
+  booking_alerts BOOLEAN DEFAULT TRUE,
+  fleet_health_alerts BOOLEAN DEFAULT TRUE,
+  financial_alerts BOOLEAN DEFAULT TRUE,
+  timezone TEXT DEFAULT 'Africa/Nairobi',
+  preferred_currency TEXT DEFAULT 'KES',
+  logo_url TEXT,
   status fleet_owner_status DEFAULT 'pending_verification',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -95,6 +114,7 @@ CREATE TABLE IF NOT EXISTS cars (
   daily_rate NUMERIC NOT NULL,
   overtime_rate NUMERIC DEFAULT 0,
   security_deposit NUMERIC DEFAULT 0,
+  is_approved BOOLEAN DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -272,6 +292,24 @@ CREATE TABLE IF NOT EXISTS driver_profiles (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 26. Notifications
+CREATE TABLE IF NOT EXISTS notifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES user_profiles(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  content TEXT NOT NULL,
+  type TEXT DEFAULT 'info', -- 'info', 'success', 'warning', 'error'
+  is_read BOOLEAN DEFAULT FALSE,
+  link TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can view their own notifications" ON notifications;
+CREATE POLICY "Users can view their own notifications" ON notifications FOR SELECT USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can update their own notifications" ON notifications;
+CREATE POLICY "Users can update their own notifications" ON notifications FOR UPDATE USING (auth.uid() = user_id);
+
 -- ===============================================================
 -- RLS POLICIES
 -- ===============================================================
@@ -405,8 +443,17 @@ CREATE TABLE IF NOT EXISTS maintenance (
   cost NUMERIC NOT NULL,
   description TEXT,
   date DATE NOT NULL,
+  next_due_date DATE,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Add next_due_date column if it doesn't exist
+DO $$ 
+BEGIN 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'maintenance' AND column_name = 'next_due_date') THEN 
+        ALTER TABLE maintenance ADD COLUMN next_due_date DATE; 
+    END IF; 
+END $$;
 
 ALTER TABLE maintenance ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Admins can manage maintenance" ON maintenance;
@@ -447,6 +494,21 @@ CREATE TABLE IF NOT EXISTS damage_reports (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 21. E-Contracts
+CREATE TABLE IF NOT EXISTS e_contracts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  booking_id UUID REFERENCES bookings(id) ON DELETE CASCADE,
+  pdf_url TEXT NOT NULL,
+  signed_at TIMESTAMPTZ DEFAULT NOW(),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE e_contracts ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Owners can view their car contracts" ON e_contracts;
+CREATE POLICY "Owners can view their car contracts" ON e_contracts FOR SELECT USING (EXISTS (SELECT 1 FROM bookings WHERE bookings.id = e_contracts.booking_id AND bookings.fleet_owner_id = auth.uid()));
+DROP POLICY IF EXISTS "Admins can manage contracts" ON e_contracts;
+CREATE POLICY "Admins can manage contracts" ON e_contracts FOR ALL USING (is_admin());
+
 ALTER TABLE damage_reports ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Fleet owners can manage their damage reports" ON damage_reports;
 CREATE POLICY "Fleet owners can manage their damage reports" ON damage_reports FOR ALL USING (fleet_owner_id = auth.uid());
@@ -465,3 +527,137 @@ DROP TRIGGER IF EXISTS update_contracts_master_updated_at ON contracts_master;
 CREATE TRIGGER update_contracts_master_updated_at BEFORE UPDATE ON contracts_master FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 DROP TRIGGER IF EXISTS update_driver_profiles_updated_at ON driver_profiles;
 CREATE TRIGGER update_driver_profiles_updated_at BEFORE UPDATE ON driver_profiles FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+
+-- 22. Client Preferences
+CREATE TABLE IF NOT EXISTS client_preferences (
+  id UUID PRIMARY KEY REFERENCES user_profiles(id) ON DELETE CASCADE,
+  preferred_pickup_location TEXT,
+  preferred_dropoff_location TEXT,
+  default_payment_method TEXT,
+  always_include_chauffeur BOOLEAN DEFAULT FALSE,
+  booking_notifications BOOLEAN DEFAULT TRUE,
+  marketing_notifications BOOLEAN DEFAULT FALSE,
+  security_notifications BOOLEAN DEFAULT TRUE,
+  preferred_currency TEXT DEFAULT 'KES',
+  preferred_language TEXT DEFAULT 'en',
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE client_preferences ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can manage their own preferences" ON client_preferences;
+CREATE POLICY "Users can manage their own preferences" ON client_preferences FOR ALL USING (auth.uid() = id);
+
+-- 23. Wishlist (Saved Cars)
+CREATE TABLE IF NOT EXISTS wishlist (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  client_id UUID REFERENCES user_profiles(id) ON DELETE CASCADE,
+  car_id UUID REFERENCES cars(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(client_id, car_id)
+);
+
+ALTER TABLE wishlist ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can manage their own wishlist" ON wishlist;
+CREATE POLICY "Users can manage their own wishlist" ON wishlist FOR ALL USING (auth.uid() = client_id);
+
+-- Add triggers for updated_at
+DROP TRIGGER IF EXISTS update_client_preferences_updated_at ON client_preferences;
+CREATE TRIGGER update_client_preferences_updated_at BEFORE UPDATE ON client_preferences FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+
+-- 24. Extension Requests
+CREATE TABLE IF NOT EXISTS extension_requests (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  booking_id UUID REFERENCES bookings(id) ON DELETE CASCADE,
+  client_id UUID REFERENCES user_profiles(id) ON DELETE CASCADE,
+  new_end_date DATE NOT NULL,
+  estimated_cost NUMERIC,
+  reason TEXT,
+  status TEXT DEFAULT 'pending', -- 'pending', 'approved', 'rejected'
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE extension_requests ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can view their own extension requests" ON extension_requests;
+CREATE POLICY "Users can view their own extension requests" ON extension_requests FOR SELECT USING (auth.uid() = client_id);
+DROP POLICY IF EXISTS "Users can create extension requests" ON extension_requests;
+CREATE POLICY "Users can create extension requests" ON extension_requests FOR INSERT WITH CHECK (auth.uid() = client_id);
+DROP POLICY IF EXISTS "Admins can manage extension requests" ON extension_requests;
+CREATE POLICY "Admins can manage extension requests" ON extension_requests FOR ALL USING (is_admin());
+
+-- Add trigger for updated_at
+DROP TRIGGER IF EXISTS update_extension_requests_updated_at ON extension_requests;
+CREATE TRIGGER update_extension_requests_updated_at BEFORE UPDATE ON extension_requests FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+
+-- 25. Exclusive Offers for Loyalty Program
+CREATE TABLE IF NOT EXISTS exclusive_offers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title TEXT NOT NULL,
+  description TEXT,
+  discount_percentage NUMERIC,
+  min_tier TEXT DEFAULT 'Bronze', -- 'Bronze', 'Silver', 'Gold', 'Platinum'
+  expiry_date TIMESTAMPTZ,
+  image_url TEXT,
+  status TEXT DEFAULT 'active', -- 'active', 'expired', 'disabled'
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE exclusive_offers ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Anyone can read active exclusive offers" ON exclusive_offers;
+CREATE POLICY "Anyone can read active exclusive offers" ON exclusive_offers FOR SELECT USING (status = 'active');
+
+-- 21. Payouts
+CREATE TABLE IF NOT EXISTS payouts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  fleet_owner_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  amount NUMERIC NOT NULL,
+  status TEXT DEFAULT 'pending', -- 'pending', 'processed', 'failed'
+  reference_code TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  processed_at TIMESTAMPTZ
+);
+
+ALTER TABLE payouts ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Owners can view their payouts" ON payouts;
+CREATE POLICY "Owners can view their payouts" ON payouts FOR SELECT USING (auth.uid() = fleet_owner_id);
+DROP POLICY IF EXISTS "Admins can manage payouts" ON payouts;
+CREATE POLICY "Admins can manage payouts" ON payouts FOR ALL USING (is_admin());
+
+-- 22. Missing Policies for Expenses
+DROP POLICY IF EXISTS "Users can manage their own expenses" ON expenses;
+CREATE POLICY "Users can manage their own expenses" ON expenses FOR ALL USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Admins can manage all expenses" ON expenses;
+CREATE POLICY "Admins can manage all expenses" ON expenses FOR ALL USING (is_admin());
+
+-- 23. Missing Policies for Fleet Owner Settings
+DROP POLICY IF EXISTS "Fleet owners can manage their own settings" ON fleet_owner_settings;
+CREATE POLICY "Fleet owners can manage their own settings" ON fleet_owner_settings FOR ALL USING (auth.uid() = id);
+DROP POLICY IF EXISTS "Admins can manage all fleet owner settings" ON fleet_owner_settings;
+CREATE POLICY "Admins can manage all fleet owner settings" ON fleet_owner_settings FOR ALL USING (is_admin());
+
+-- 24. Missing Policies for Maintenance
+DROP POLICY IF EXISTS "Owners can manage their car maintenance" ON maintenance;
+CREATE POLICY "Owners can manage their car maintenance" ON maintenance FOR ALL USING (EXISTS (SELECT 1 FROM cars WHERE cars.id = maintenance.car_id AND cars.fleet_owner_id = auth.uid()));
+
+-- 25. Missing Policies for Bookings
+DROP POLICY IF EXISTS "Owners can update their car bookings" ON bookings;
+CREATE POLICY "Owners can update their car bookings" ON bookings FOR UPDATE USING (fleet_owner_id = auth.uid());
+
+-- 26. Missing Policies for Messages
+DROP POLICY IF EXISTS "Users can update their own messages" ON messages;
+CREATE POLICY "Users can update their own messages" ON messages FOR UPDATE USING (sender_id = auth.uid() OR receiver_id = auth.uid());
+
+-- SEED DATA
+INSERT INTO coupons (code, discount_value, discount_type, expiry_date, usage_limit, status)
+VALUES 
+('WELCOME20', 20, 'percentage', '2027-12-31', 1000, 'active'),
+('DRIVE500', 500, 'fixed', '2027-12-31', 500, 'active'),
+('WEEKEND15', 15, 'percentage', '2027-12-31', 200, 'active')
+ON CONFLICT (code) DO NOTHING;
+
+INSERT INTO exclusive_offers (title, description, discount_percentage, min_tier, status, image_url)
+VALUES 
+('Early Access: New Luxury Fleet', 'Be the first to drive our new 2026 Range Rover models.', 0, 'Gold', 'active', 'https://picsum.photos/seed/luxury/800/400'),
+('Weekend Flash Sale', 'Get 25% off on all SUV rentals this weekend only.', 25, 'Bronze', 'active', 'https://picsum.photos/seed/suv/800/400'),
+('Personal Concierge Service', 'Complimentary personal concierge for all your travel needs.', 0, 'Platinum', 'active', 'https://picsum.photos/seed/concierge/800/400')
+ON CONFLICT DO NOTHING;

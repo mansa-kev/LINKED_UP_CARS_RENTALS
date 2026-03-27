@@ -3,14 +3,9 @@ import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Car, 
-  Wrench, 
-  AlertTriangle, 
-  DollarSign, 
-  Receipt,
-  Inbox, 
-  CalendarCheck,
   FileText, 
-  TrendingUp, 
+  Award, 
+  Inbox, 
   Settings as SettingsIcon,
   Menu,
   X,
@@ -20,68 +15,45 @@ import {
   Sun,
   Moon
 } from 'lucide-react';
-import { FleetDashboard } from './FleetDashboard';
-import { MyCars } from './MyCars';
+import { Dashboard } from './Dashboard';
+import { DigitalGlovebox } from './DigitalGlovebox';
+import { MyBookings } from './MyBookings';
+import { MyProfile } from './MyProfile';
 import { MyInbox } from './MyInbox';
-import { ExpenseTracker } from './ExpenseTracker';
-import { BookingRequests } from './BookingRequests';
-import { DigitalVault } from './DigitalVault';
-import { GrowthAndInsights } from './GrowthAndInsights';
-import MaintenanceLogs from './MaintenanceLogs';
-import DamageReports from './DamageReports';
-import { FinancialCenter } from './FinancialCenter';
-import { FleetSettings } from './FleetSettings';
+import { Settings } from './Settings';
+import { LoyaltyRewards } from './LoyaltyRewards';
 import { PortalHeader } from '../PortalHeader';
 
 const navGroups = [
   {
-    category: 'Strategic Dashboard',
+    category: 'Main',
     items: [
-      { name: 'Dashboard', path: '/fleet', icon: LayoutDashboard }
+      { name: 'Dashboard', path: '/client', icon: LayoutDashboard },
+      { name: 'My Bookings', path: '/client/bookings', icon: Car },
     ]
   },
   {
-    category: 'Fleet Management',
+    category: 'Account',
     items: [
-      { name: 'My Cars', path: '/fleet/cars', icon: Car },
-      { name: 'Maintenance Logs', path: '/fleet/maintenance', icon: Wrench },
-      { name: 'Damage Reports', path: '/fleet/damage', icon: AlertTriangle },
+      { name: 'My Profile', path: '/client/profile', icon: User },
+      { name: 'Digital Glovebox', path: '/client/glovebox', icon: FileText },
+      { name: 'Loyalty & Rewards', path: '/client/rewards', icon: Award },
     ]
   },
   {
-    category: 'Financials',
+    category: 'Support',
     items: [
-      { name: 'Earnings & Payouts', path: '/fleet/financials', icon: DollarSign },
-      { name: 'Expense Tracker', path: '/fleet/expenses', icon: Receipt },
-    ]
-  },
-  {
-    category: 'Operations & Communication',
-    items: [
-      { name: 'My Inbox', path: '/fleet/inbox', icon: Inbox },
-      { name: 'Booking Requests', path: '/fleet/booking-requests', icon: CalendarCheck },
-      { name: 'Digital Vault', path: '/fleet/vault', icon: FileText },
-    ]
-  },
-  {
-    category: 'Growth & Optimization',
-    items: [
-      { name: 'Growth & Insights', path: '/fleet/growth', icon: TrendingUp },
-    ]
-  },
-  {
-    category: 'Account Settings',
-    items: [
-      { name: 'Settings', path: '/fleet/settings', icon: SettingsIcon },
+      { name: 'My Inbox', path: '/client/inbox', icon: Inbox },
+      { name: 'Settings', path: '/client/settings', icon: SettingsIcon },
     ]
   }
 ];
 
-export function FleetLayout() {
+export function ClientLayout() {
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(() => {
-    const saved = localStorage.getItem('fleet-theme');
+    const saved = localStorage.getItem('client-theme');
     if (saved) return saved === 'dark';
     return window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
@@ -89,10 +61,10 @@ export function FleetLayout() {
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
-      localStorage.setItem('fleet-theme', 'dark');
+      localStorage.setItem('client-theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
-      localStorage.setItem('fleet-theme', 'light');
+      localStorage.setItem('client-theme', 'light');
     }
   }, [isDarkMode]);
 
@@ -143,23 +115,18 @@ export function FleetLayout() {
         <PortalHeader 
           isDarkMode={isDarkMode} 
           setIsDarkMode={setIsDarkMode} 
-          portalType="fleet" 
+          portalType="client" 
         />
 
         <main className="flex-1 p-8 overflow-y-auto">
           <Routes>
-            <Route path="/fleet" element={<FleetDashboard />} />
-            <Route path="/fleet/cars" element={<MyCars />} />
-            <Route path="/fleet/maintenance" element={<MaintenanceLogs />} />
-            <Route path="/fleet/damage" element={<DamageReports />} />
-            <Route path="/fleet/financials" element={<FinancialCenter />} />
-            <Route path="/fleet/expenses" element={<ExpenseTracker />} />
-            <Route path="/fleet/cars" element={<MyCars />} />
-            <Route path="/fleet/inbox" element={<MyInbox />} />
-            <Route path="/fleet/booking-requests" element={<BookingRequests />} />
-            <Route path="/fleet/vault" element={<DigitalVault />} />
-            <Route path="/fleet/growth" element={<GrowthAndInsights />} />
-            <Route path="/fleet/settings" element={<FleetSettings />} />
+            <Route path="/client" element={<Dashboard />} />
+            <Route path="/client/bookings" element={<MyBookings />} />
+            <Route path="/client/profile" element={<MyProfile />} />
+            <Route path="/client/glovebox" element={<DigitalGlovebox />} />
+            <Route path="/client/rewards" element={<LoyaltyRewards />} />
+            <Route path="/client/inbox" element={<MyInbox />} />
+            <Route path="/client/settings" element={<Settings />} />
           </Routes>
         </main>
       </div>
