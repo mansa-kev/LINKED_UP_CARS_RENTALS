@@ -306,7 +306,7 @@ export const fleetService = {
   getReviews: async (carId: string) => {
     const { data, error } = await supabase
       .from('reviews')
-      .select('*, user_profiles(full_name, avatar_url)')
+      .select('*, user_profiles(full_name)')
       .eq('car_id', carId)
       .eq('status', 'published')
       .order('created_at', { ascending: false });

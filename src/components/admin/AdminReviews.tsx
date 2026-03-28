@@ -44,7 +44,7 @@ export function AdminReviews() {
       const formattedReviews: Review[] = (data || []).map((r: any) => ({
         id: r.id,
         userName: r.user_profiles?.full_name || 'Anonymous',
-        userAvatar: r.user_profiles?.avatar_url,
+        userAvatar: undefined,
         carName: `${r.cars?.make} ${r.cars?.model}` || 'Unknown Car',
         rating: r.rating,
         comment: r.comment,

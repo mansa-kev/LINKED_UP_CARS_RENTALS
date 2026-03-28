@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { AuthProvider } from './contexts/AuthContext';
 import { useSubdomain } from './contexts/SubdomainContext';
 import { SubdomainSwitcher } from './components/SubdomainSwitcher';
 import { AdminPortal } from './components/AdminPortal';
@@ -12,6 +13,7 @@ import { PublicLayout } from './components/public/PublicLayout';
 import { PublicHome } from './components/public/PublicHome';
 import { AboutUs } from './components/public/AboutUs';
 import { Contact } from './components/public/Contact';
+import { BrowseCars } from './components/public/BrowseCars';
 import { CarDetails } from './components/public/CarDetails';
 import { BookingConfirmation } from './components/public/BookingConfirmation';
 
@@ -24,15 +26,17 @@ export default function App() {
   return (
     <BrowserRouter>
       <ThemeProvider>
-        <div className="relative min-h-screen">
-          <Toaster position="top-right" richColors />
-          
-          {subdomain === 'www' && (
+        <AuthProvider>
+          <div className="relative min-h-screen">
+            <Toaster position="top-right" richColors />
+            
+            {subdomain === 'www' && (
             <PublicLayout>
               <Routes>
                 <Route path="/" element={<PublicHome />} />
                 <Route path="/about" element={<AboutUs />} />
                 <Route path="/contact" element={<Contact />} />
+                <Route path="/cars" element={<BrowseCars />} />
                 <Route path="/cars/:id" element={<CarDetails />} />
                 <Route path="/booking-confirmation/:bookingId" element={<BookingConfirmation />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
@@ -77,6 +81,7 @@ export default function App() {
           {/* Dev Switcher for previewing subdomains */}
           <SubdomainSwitcher />
         </div>
+        </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>
   );

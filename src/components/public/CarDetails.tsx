@@ -46,7 +46,7 @@ export function CarDetails() {
 
   if (loading || !car) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
 
-  const images = car.images && car.images.length > 0 ? car.images : [`https://picsum.photos/seed/${car.id}/1200/800`];
+  const images = (car.images && car.images.length > 0) ? car.images : (car.photos && car.photos.length > 0 ? car.photos : [`https://picsum.photos/seed/${car.id}/1200/800`]);
 
   return (
     <div className="pt-32 pb-20 bg-background">
@@ -65,6 +65,15 @@ export function CarDetails() {
                 <Heart size={24} />
               </button>
             </div>
+            {images.length > 1 && (
+              <div className="flex gap-4">
+                {images.map((img, idx) => (
+                  <button key={idx} onClick={() => setActiveImage(idx)} className={`w-20 h-20 rounded-2xl overflow-hidden border-2 ${activeImage === idx ? 'border-primary' : 'border-transparent'}`}>
+                    <img src={img} alt="thumbnail" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Car Overview & Booking */}
@@ -72,7 +81,23 @@ export function CarDetails() {
             <h1 className="text-5xl font-serif font-black italic text-white mb-6">
               {car.make} <span className="text-primary">{car.model}</span>
             </h1>
+            <p className="text-lg text-muted-foreground mb-8">{car.description}</p>
             <p className="text-2xl font-bold mb-8">${car.daily_rate}<span className="text-sm text-muted-foreground">/day</span></p>
+            
+            <div className="grid grid-cols-2 gap-4 mb-8">
+              <div className="p-4 bg-card rounded-2xl border border-white/5 flex items-center gap-3">
+                <Users className="text-primary" size={20} />
+                <span className="text-sm font-bold">{car.seats} Seats</span>
+              </div>
+              <div className="p-4 bg-card rounded-2xl border border-white/5 flex items-center gap-3">
+                <Fuel className="text-primary" size={20} />
+                <span className="text-sm font-bold">{car.fuel_type}</span>
+              </div>
+              <div className="p-4 bg-card rounded-2xl border border-white/5 flex items-center gap-3">
+                <Settings className="text-primary" size={20} />
+                <span className="text-sm font-bold">{car.transmission}</span>
+              </div>
+            </div>
             
             <BookingFlow car={car} />
           </div>
@@ -83,12 +108,21 @@ export function CarDetails() {
           <h2 className="text-3xl font-serif font-black italic text-white mb-8">Specifications</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="p-8 bg-card rounded-3xl border border-white/5">
-              <h4 className="font-bold text-white mb-4">Engine & Performance</h4>
-              <p className="text-muted-foreground text-sm">Details about engine...</p>
+              <h4 className="font-bold text-white mb-4">Features</h4>
+              <ul className="grid grid-cols-2 gap-2">
+                {car.features.map((feature, idx) => (
+                  <li key={idx} className="text-muted-foreground text-sm flex items-center gap-2">
+                    <ShieldCheck size={14} className="text-primary" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
             </div>
             <div className="p-8 bg-card rounded-3xl border border-white/5">
-              <h4 className="font-bold text-white mb-4">Safety Features</h4>
-              <p className="text-muted-foreground text-sm">Details about safety...</p>
+              <h4 className="font-bold text-white mb-4">Vehicle Details</h4>
+              <p className="text-muted-foreground text-sm">License Plate: {car.license_plate}</p>
+              <p className="text-muted-foreground text-sm">Category: {car.category}</p>
+              <p className="text-muted-foreground text-sm">Year: {car.year}</p>
             </div>
           </div>
         </div>

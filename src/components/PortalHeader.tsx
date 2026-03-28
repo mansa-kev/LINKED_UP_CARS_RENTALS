@@ -14,6 +14,7 @@ import {
   X
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 
 interface Notification {
   id: string;
@@ -33,9 +34,9 @@ interface PortalHeaderProps {
 
 export function PortalHeader({ isDarkMode, setIsDarkMode, portalType }: PortalHeaderProps) {
   const navigate = useNavigate();
+  const { profile: user } = useAuth();
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [showNotificationDropdown, setShowNotificationDropdown] = useState(false);
-  const [user, setUser] = useState<any>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   
@@ -43,8 +44,9 @@ export function PortalHeader({ isDarkMode, setIsDarkMode, portalType }: PortalHe
   const notificationRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetchUser();
-    fetchNotifications();
+    if (user) {
+      fetchNotifications(user);
+    }
 
     // Close dropdowns on click outside
     const handleClickOutside = (event: MouseEvent) => {
@@ -58,24 +60,9 @@ export function PortalHeader({ isDarkMode, setIsDarkMode, portalType }: PortalHe
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [user]);
 
-  const fetchUser = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-      setUser({ ...user, ...profile });
-    }
-  };
-
-  const fetchNotifications = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
+  const fetchNotifications = async (user: any) => {
     const { data, error } = await supabase
       .from('notifications')
       .select('*')
@@ -118,7 +105,6 @@ export function PortalHeader({ isDarkMode, setIsDarkMode, portalType }: PortalHe
   };
 
   const markAsRead = async (id: string) => {
-    const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
     await supabase
