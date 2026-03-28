@@ -157,7 +157,7 @@ export function AdminReports() {
                   : 'bg-muted text-muted-foreground hover:bg-muted/80'
               }`}
             >
-              {cat.charAt(0).toUpperCase() + cat.slice(1)} Reports
+              {cat ? (cat.charAt(0).toUpperCase() + cat.slice(1)) : ''} Reports
             </button>
           ))}
         </div>

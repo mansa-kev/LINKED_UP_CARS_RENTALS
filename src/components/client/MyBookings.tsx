@@ -113,7 +113,7 @@ export function MyBookings() {
                     <p className="text-sm text-muted-foreground">Total Amount</p>
                     <p className="text-xl font-bold text-primary">KES {booking.total_amount.toLocaleString()}</p>
                     <p className={`text-xs font-medium mt-1 ${booking.payment_status === 'paid' ? 'text-green-500' : 'text-yellow-500'}`}>
-                      Payment: {booking.payment_status.toUpperCase()}
+                      Payment: {booking.payment_status?.toUpperCase() || 'N/A'}
                     </p>
                   </div>
 

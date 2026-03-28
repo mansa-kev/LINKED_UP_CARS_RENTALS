@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { clientService } from '../../services/clientService';
-import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
 import { User, Heart, Settings as SettingsIcon, History, Save, Trash2, Car, MapPin, CreditCard, CheckCircle2 } from 'lucide-react';
 
 export function MyProfile() {
+  const { user, profile: authProfile } = useAuth();
   const [profile, setProfile] = useState<any>(null);
   const [preferences, setPreferences] = useState<any>({
     preferred_pickup_location: '',
@@ -19,20 +20,18 @@ export function MyProfile() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [user, authProfile]);
 
   const fetchData = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const [prof, prefs, wish, bks] = await Promise.all([
-          supabase.from('user_profiles').select('*').eq('id', user.id).single(),
+        const [prefs, wish, bks] = await Promise.all([
           clientService.getPreferences(user.id),
           clientService.getWishlist(user.id),
           clientService.getAllBookings(user.id)
         ]);
         
-        setProfile(prof.data);
+        setProfile(authProfile);
         if (prefs) setPreferences(prefs);
         setWishlist(wish || []);
         setBookings(bks || []);

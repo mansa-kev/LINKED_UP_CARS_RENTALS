@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { clientService } from '../../services/clientService';
-import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
 import { Inbox, Send, Plus, Clock, MessageSquare, User, Shield, AlertCircle, CheckCircle2, XCircle } from 'lucide-react';
 
 export function MyInbox() {
+  const { user } = useAuth();
   const [messages, setMessages] = useState<any[]>([]);
   const [extensionRequests, setExtensionRequests] = useState<any[]>([]);
   const [activeBookings, setActiveBookings] = useState<any[]>([]);
@@ -24,21 +25,20 @@ export function MyInbox() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [user]);
 
   const fetchData = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setCurrentUser(user);
         const [msgs, exts, bks] = await Promise.all([
           clientService.getMessages(user.id),
           clientService.getExtensionRequests(user.id),
-          supabase.from('bookings').select('*, cars(*)').eq('client_id', user.id).eq('status', 'in_progress')
+          clientService.getAllBookings(user.id)
         ]);
         setMessages(msgs || []);
         setExtensionRequests(exts || []);
-        setActiveBookings(bks.data || []);
+        setActiveBookings(bks?.filter((b: any) => b.status === 'in_progress') || []);
       }
     } catch (err) {
       console.error("Error fetching inbox data:", err);

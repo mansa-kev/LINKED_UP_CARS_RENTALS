@@ -85,7 +85,7 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
             Contact
           </Link>
           <Link 
-            to="https://app.linkedupcarrentals.com" 
+            to="/login" 
             className="px-6 py-2 bg-primary text-white rounded-full text-xs font-bold uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-primary/20"
           >
             Login / Sign Up
@@ -148,7 +148,7 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
 
               <div className="mt-auto pt-8 border-t border-border">
                 <Link 
-                  to="https://app.linkedupcarrentals.com" 
+                  to="/login" 
                   className="w-full py-4 bg-primary text-white rounded-2xl font-bold text-center block shadow-lg shadow-primary/20"
                 >
                   Login / Sign Up

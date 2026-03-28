@@ -13,6 +13,7 @@ import { PublicHome } from './components/public/PublicHome';
 import { AboutUs } from './components/public/AboutUs';
 import { Contact } from './components/public/Contact';
 import { CarDetails } from './components/public/CarDetails';
+import { BookingConfirmation } from './components/public/BookingConfirmation';
 
 export default function App() {
   const { subdomain } = useSubdomain();
@@ -33,6 +34,7 @@ export default function App() {
                 <Route path="/about" element={<AboutUs />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/cars/:id" element={<CarDetails />} />
+                <Route path="/booking-confirmation/:bookingId" element={<BookingConfirmation />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </PublicLayout>

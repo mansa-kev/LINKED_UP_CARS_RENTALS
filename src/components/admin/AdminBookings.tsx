@@ -196,7 +196,7 @@ export function AdminBookings() {
                   : 'bg-card text-muted-foreground hover:bg-muted'
               }`}
             >
-              {tab.replace(/_/g, ' ').charAt(0).toUpperCase() + tab.replace(/_/g, ' ').slice(1)}
+              {tab ? (tab.replace(/_/g, ' ').charAt(0).toUpperCase() + tab.replace(/_/g, ' ').slice(1)) : ''}
             </button>
           ))}
         </div>

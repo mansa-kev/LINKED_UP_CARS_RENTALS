@@ -185,7 +185,7 @@ export function AdminVerification() {
                 : 'bg-card text-muted-foreground hover:bg-muted'
             }`}
           >
-            {type === 'all' ? 'All Queue' : type.replace('_', ' ').charAt(0).toUpperCase() + type.replace('_', ' ').slice(1) + 's'}
+            {type === 'all' ? 'All Queue' : (type ? (type.replace('_', ' ').charAt(0).toUpperCase() + type.replace('_', ' ').slice(1) + 's') : '')}
           </button>
         ))}
       </div>

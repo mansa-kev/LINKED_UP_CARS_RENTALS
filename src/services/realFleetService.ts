@@ -12,30 +12,6 @@ export const fleetService = {
     return data;
   },
 
-  getAvailableCars: async (pickupDate: string, dropoffDate: string, location?: string) => {
-    // 1. Get all cars
-    const { data: cars, error: carsError } = await supabase
-      .from('cars')
-      .select('*')
-      .eq('status', 'available');
-    
-    if (carsError) return handleSupabaseError(carsError, 'getAvailableCars - cars');
-
-    // 2. Get all bookings that overlap with the requested dates
-    const { data: bookings, error: bookingsError } = await supabase
-      .from('bookings')
-      .select('car_id')
-      .or(`start_date.lte.${dropoffDate},end_date.gte.${pickupDate}`)
-      .in('status', ['confirmed', 'in_progress', 'on_trip']);
-
-    if (bookingsError) return handleSupabaseError(bookingsError, 'getAvailableCars - bookings');
-
-    const bookedCarIds = new Set(bookings?.map(b => b.car_id));
-
-    // 3. Filter out booked cars
-    return cars?.filter(car => !bookedCarIds.has(car.id)) || [];
-  },
-
   getCarById: async (id: string) => {
     const { data, error } = await supabase
       .from('cars')
@@ -300,17 +276,6 @@ export const fleetService = {
       .eq('fleet_owner_id', fleetOwnerId)
       .order('created_at', { ascending: false });
     if (error) return handleSupabaseError(error, 'getDamageReports');
-    return data;
-  },
-
-  getReviews: async (carId: string) => {
-    const { data, error } = await supabase
-      .from('reviews')
-      .select('*, user_profiles(full_name, avatar_url)')
-      .eq('car_id', carId)
-      .eq('status', 'published')
-      .order('created_at', { ascending: false });
-    if (error) return handleSupabaseError(error, 'getReviews');
     return data;
   },
 
