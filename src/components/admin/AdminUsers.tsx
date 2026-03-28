@@ -20,6 +20,7 @@ import {
   Activity,
   Link as LinkIcon
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 // --- Types ---
 
@@ -94,6 +95,7 @@ export function AdminUsers() {
       setUsers(data || []);
     } catch (error) {
       console.error('Failed to fetch users:', error);
+      toast.error('Failed to fetch users');
     } finally {
       setLoading(false);
     }
@@ -104,42 +106,51 @@ export function AdminUsers() {
   }, []);
 
   const handleUpdateRole = async (id: string, role: UserRole) => {
-    if (!window.confirm(`Are you sure you want to change this user's role to ${role}?`)) return;
-    try {
+    const promise = (async () => {
       await adminService.updateUserRole(id, role);
       fetchUsers();
       if (selectedUser?.id === id) {
         setSelectedUser({ ...selectedUser, role });
       }
-    } catch (error) {
-      alert('Failed to update user role');
-    }
+    })();
+
+    toast.promise(promise, {
+      loading: `Changing user's role to ${role}...`,
+      success: `User's role changed to ${role} successfully`,
+      error: 'Failed to update user role'
+    });
   };
 
   const handleUpdateStatus = async (id: string, status: UserStatus) => {
     const action = status === 'suspended' ? 'suspend' : 'activate';
-    if (!window.confirm(`Are you sure you want to ${action} this user?`)) return;
-    try {
+    const promise = (async () => {
       await adminService.updateUserStatus(id, status);
       fetchUsers();
       if (selectedUser?.id === id) {
         setSelectedUser({ ...selectedUser, status });
       }
-    } catch (error) {
-      alert(`Failed to ${action} user`);
-    }
+    })();
+
+    toast.promise(promise, {
+      loading: `${action === 'suspend' ? 'Suspending' : 'Activating'} user...`,
+      success: `User ${action === 'suspend' ? 'suspended' : 'activated'} successfully`,
+      error: `Failed to ${action} user`
+    });
   };
 
   const handleDeleteUser = async (id: string) => {
-    if (!window.confirm('Are you sure you want to permanently delete this user? This action cannot be undone.')) return;
-    try {
+    const promise = (async () => {
       await adminService.deleteUser(id);
       setIsProfileModalOpen(false);
       setSelectedUser(null);
       fetchUsers();
-    } catch (error) {
-      alert('Failed to delete user');
-    }
+    })();
+
+    toast.promise(promise, {
+      loading: 'Deleting user...',
+      success: 'User deleted successfully',
+      error: 'Failed to delete user'
+    });
   };
 
   const openProfile = (user: UserItem) => {

@@ -13,6 +13,7 @@ import {
   XCircle,
   Clock
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 // --- Types ---
 
@@ -97,12 +98,17 @@ export function AdminDrivers() {
   }, []);
 
   const handleUpdateStatus = async (id: string, status: DriverStatus) => {
-    try {
+    const action = status === 'suspended' ? 'suspend' : 'activate';
+    const promise = (async () => {
       await adminService.updateDriverStatus(id, status);
       fetchDrivers();
-    } catch (error) {
-      alert('Failed to update driver status');
-    }
+    })();
+
+    toast.promise(promise, {
+      loading: `${action === 'suspend' ? 'Suspending' : 'Activating'} driver...`,
+      success: `Driver ${action === 'suspend' ? 'suspended' : 'activated'} successfully`,
+      error: `Failed to ${action} driver`
+    });
   };
 
   const filteredDrivers = drivers.map(d => ({
@@ -284,11 +290,17 @@ export function AdminDrivers() {
                 license_number: formData.get('license_number'),
               };
               try {
-                await adminService.addDriver(driver);
+                const promise = adminService.addDriver(driver);
+                toast.promise(promise, {
+                  loading: 'Adding driver...',
+                  success: 'Driver added successfully',
+                  error: 'Failed to add driver'
+                });
+                await promise;
                 setIsAddModalOpen(false);
                 fetchDrivers();
               } catch (error) {
-                alert('Failed to add driver');
+                // Error handled by toast.promise
               }
             }} className="space-y-4">
               <input name="full_name" placeholder="Full Name" className="w-full p-2 border border-border rounded-lg" required />

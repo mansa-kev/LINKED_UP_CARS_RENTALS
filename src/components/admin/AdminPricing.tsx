@@ -15,6 +15,7 @@ import {
   X,
   Loader2
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 // --- Types ---
 
@@ -63,7 +64,7 @@ export function AdminPricing() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
+    const promise = (async () => {
       if (editingRule) {
         await adminService.updatePricingRule(editingRule.id, formData);
       } else {
@@ -72,19 +73,26 @@ export function AdminPricing() {
       setIsModalOpen(false);
       setEditingRule(null);
       fetchPricing();
-    } catch (error) {
-      alert('Failed to save pricing rule');
-    }
+    })();
+
+    toast.promise(promise, {
+      loading: 'Saving pricing rule...',
+      success: 'Pricing rule saved successfully',
+      error: 'Failed to save pricing rule'
+    });
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this rule?')) return;
-    try {
+    const promise = (async () => {
       await adminService.deletePricingRule(id);
       fetchPricing();
-    } catch (error) {
-      alert('Failed to delete pricing rule');
-    }
+    })();
+
+    toast.promise(promise, {
+      loading: 'Deleting pricing rule...',
+      success: 'Pricing rule deleted successfully',
+      error: 'Failed to delete pricing rule'
+    });
   };
 
   const openAddModal = (type: 'base' | 'surge' | 'discount') => {

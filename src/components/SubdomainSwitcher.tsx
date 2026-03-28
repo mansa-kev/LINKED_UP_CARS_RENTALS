@@ -1,15 +1,17 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useSubdomain, Subdomain } from '../contexts/SubdomainContext';
 
-const sites: { id: Subdomain; label: string; color: string }[] = [
-  { id: 'www', label: 'Public Site', color: 'bg-orange-500' },
-  { id: 'app', label: 'App Portal', color: 'bg-blue-500' },
-  { id: 'fleet', label: 'Fleet Portal', color: 'bg-green-500' },
-  { id: 'admin', label: 'Admin Command', color: 'bg-red-500' },
+const sites: { id: Subdomain; label: string; color: string; path: string }[] = [
+  { id: 'www', label: 'Public Site', color: 'bg-orange-500', path: '/' },
+  { id: 'app', label: 'App Portal', color: 'bg-blue-500', path: '/client' },
+  { id: 'fleet', label: 'Fleet Portal', color: 'bg-green-500', path: '/fleet' },
+  { id: 'admin', label: 'Admin Command', color: 'bg-red-500', path: '/admin' },
 ];
 
 export function SubdomainSwitcher() {
   const { subdomain, setPreviewSubdomain } = useSubdomain();
+  const navigate = useNavigate();
 
   // Always show in development/preview environments
   const isDev = 
@@ -28,6 +30,7 @@ export function SubdomainSwitcher() {
             onClick={() => {
               console.log('Switching to:', site.id);
               setPreviewSubdomain(site.id);
+              navigate(site.path);
             }}
             className={`px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${
               subdomain === site.id

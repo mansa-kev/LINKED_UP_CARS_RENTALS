@@ -87,7 +87,7 @@ export function AddMaintenanceModal({ isOpen, onClose, onSuccess, initialCarId }
                 onChange={(e) => setFormData({ ...formData, car_id: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                {cars.map(car => (
+                {(cars || []).map(car => (
                   <option key={car.id} value={car.id}>
                     {car.make} {car.model} ({car.license_plate})
                   </option>

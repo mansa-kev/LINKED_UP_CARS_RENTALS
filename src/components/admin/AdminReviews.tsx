@@ -14,6 +14,7 @@ import {
   ChevronRight,
   Loader2
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 // --- Types ---
 
@@ -63,22 +64,29 @@ export function AdminReviews() {
   }, []);
 
   const handleUpdateStatus = async (id: string, status: string) => {
-    try {
+    const promise = (async () => {
       await adminService.updateReviewStatus(id, status);
       fetchReviews();
-    } catch (error) {
-      alert('Failed to update review status');
-    }
+    })();
+
+    toast.promise(promise, {
+      loading: `Updating review status to ${status}...`,
+      success: `Review status updated to ${status} successfully`,
+      error: 'Failed to update review status'
+    });
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this review?')) return;
-    try {
+    const promise = (async () => {
       await adminService.deleteReview(id);
       fetchReviews();
-    } catch (error) {
-      alert('Failed to delete review');
-    }
+    })();
+
+    toast.promise(promise, {
+      loading: 'Deleting review...',
+      success: 'Review deleted successfully',
+      error: 'Failed to delete review'
+    });
   };
 
   const filteredReviews = reviews.filter(r => {

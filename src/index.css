@@ -1,24 +1,32 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Inter:wght@100..900&family=JetBrains+Mono:wght@100..800&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Playfair Display", serif;
+  --font-mono: "JetBrains Mono", monospace;
   
-  /* Modern Professional (Kusuri.io) Theme Variables */
+  /* Sunset/Dark Ember Theme Variables */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
-  --color-card-foreground: var(--foreground);
+  --color-card-foreground: var(--card-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
-  --color-primary-light: var(--primary-light);
-  --color-primary-dark: var(--primary-dark);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
+  --color-ring: var(--ring);
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-error: var(--error);
+  --color-glass-bg: var(--glass-bg);
+  --color-glass-border: var(--glass-border);
 
   /* Animations */
   @keyframes fade-in {
@@ -28,6 +36,10 @@
   @keyframes slide-in-from-bottom {
     from { transform: translateY(10px); }
     to { transform: translateY(0); }
+  }
+  @keyframes scale-in {
+    from { transform: scale(0.95); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
   }
 }
 
@@ -44,40 +56,87 @@
   animation-name: slide-in-from-bottom;
 }
 
+.scale-in {
+  animation-name: scale-in;
+}
+
 :root {
-  --background: #F8FAFC;
-  --foreground: #0F172A;
+  --background: #FFFFFF;
+  --foreground: #09090B;
   --card: #FFFFFF;
-  --primary: #FF4D00;
+  --card-foreground: #09090B;
+  --primary: #FF6B00;
   --primary-foreground: #FFFFFF;
-  --primary-light: #FFF5ED;
-  --muted: #F1F5F9;
-  --muted-foreground: #64748B;
-  --border: #E2E8F0;
-  --input: #FFFFFF;
+  --secondary: #F4F4F5;
+  --secondary-foreground: #18181B;
+  --muted: #F4F4F5;
+  --muted-foreground: #71717A;
+  --accent: #F4F4F5;
+  --accent-foreground: #18181B;
+  --border: #E4E4E7;
+  --input: #E4E4E7;
+  --ring: #FF6B00;
   --success: #10B981;
   --warning: #F59E0B;
   --error: #EF4444;
+  --glass-bg: rgba(255, 255, 255, 0.6);
+  --glass-border: rgba(0, 0, 0, 0.1);
 }
 
 .dark {
-  --background: #121212;
-  --foreground: #E0E0E0;
-  --card: #1E1E1E;
+  --background: #0A0A0A;
+  --foreground: #F5F5F5;
+  --card: #1A1A1A;
+  --card-foreground: #F5F5F5;
   --primary: #FF6B00;
   --primary-foreground: #FFFFFF;
-  --primary-dark: #3D2100;
-  --muted: #262626;
-  --muted-foreground: #A0A0A0;
-  --border: #333333;
-  --input: #2C2C2C;
-  --success: #69F0AE;
-  --warning: #FFD740;
-  --error: #FF5252;
+  --secondary: #333333;
+  --secondary-foreground: #CCCCCC;
+  --muted: #222222;
+  --muted-foreground: #888888;
+  --accent: #FF8C00;
+  --accent-foreground: #FFFFFF;
+  --border: #444444;
+  --input: #2A2A2A;
+  --ring: #FF6B00;
+  --success: #10B981;
+  --warning: #F59E0B;
+  --error: #EF4444;
+  --glass-bg: rgba(10, 10, 10, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.1);
+}
+
+/* Glassmorphism Utilities */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+}
+
+.glass-dark {
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 body {
   background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-serif);
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   XCircle
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export function AdminGrowthTools() {
   const [coupons, setCoupons] = useState<any[]>([]);
@@ -45,7 +46,7 @@ export function AdminGrowthTools() {
 
   const handleCreateCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
+    const promise = (async () => {
       await adminService.createCoupon(newCoupon);
       setIsAdding(false);
       fetchCoupons();
@@ -58,19 +59,26 @@ export function AdminGrowthTools() {
         expires_at: '',
         usage_limit: 100
       });
-    } catch (error) {
-      alert('Failed to create coupon');
-    }
+    })();
+
+    toast.promise(promise, {
+      loading: 'Creating coupon...',
+      success: 'Coupon created successfully',
+      error: 'Failed to create coupon'
+    });
   };
 
   const handleDeleteCoupon = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this coupon?')) return;
-    try {
+    const promise = (async () => {
       await adminService.deleteCoupon(id);
       fetchCoupons();
-    } catch (error) {
-      alert('Failed to delete coupon');
-    }
+    })();
+
+    toast.promise(promise, {
+      loading: 'Deleting coupon...',
+      success: 'Coupon deleted successfully',
+      error: 'Failed to delete coupon'
+    });
   };
 
   const filteredCoupons = coupons.filter(c => 

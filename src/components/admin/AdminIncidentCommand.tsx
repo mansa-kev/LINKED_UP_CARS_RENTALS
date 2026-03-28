@@ -19,6 +19,7 @@ import {
   Calendar,
   ChevronRight
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export function AdminIncidentCommand() {
   const [incidents, setIncidents] = useState<any[]>([]);
@@ -31,13 +32,21 @@ export function AdminIncidentCommand() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [incidentsData, bookingsData, healthData] = await Promise.all([
+      const [incidentsData, bookingsResult, healthData] = await Promise.all([
         adminService.getIncidents(),
         adminService.getBookings(),
         adminService.getSystemHealth()
       ]);
       setIncidents(incidentsData || []);
-      setActiveBookings((bookingsData || []).filter((b: any) => b.status === 'active'));
+      
+      let bookings = [];
+      if (bookingsResult && 'data' in bookingsResult) {
+        bookings = bookingsResult.data || [];
+      } else if (Array.isArray(bookingsResult)) {
+        bookings = bookingsResult;
+      }
+      
+      setActiveBookings(bookings.filter((b: any) => b.status === 'confirmed' || b.status === 'in_progress'));
       setSystemHealth(healthData);
     } catch (error) {
       console.error('Failed to fetch incident command data:', error);
@@ -47,15 +56,19 @@ export function AdminIncidentCommand() {
   };
 
   const handleUpdateStatus = async (id: string, status: string) => {
-    try {
+    const promise = (async () => {
       await adminService.updateIncidentStatus(id, status);
       fetchData();
       if (selectedIncident && selectedIncident.id === id) {
         setSelectedIncident({ ...selectedIncident, status });
       }
-    } catch (error) {
-      alert('Failed to update status');
-    }
+    })();
+
+    toast.promise(promise, {
+      loading: `Updating incident status to ${status}...`,
+      success: `Incident status updated to ${status} successfully`,
+      error: 'Failed to update status'
+    });
   };
 
   useEffect(() => {

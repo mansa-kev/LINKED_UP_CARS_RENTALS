@@ -12,6 +12,7 @@ import {
   X
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { toast } from 'sonner';
 
 export function AdminPaymentApprovals() {
   const [payments, setPayments] = useState<any[]>([]);
@@ -28,6 +29,7 @@ export function AdminPaymentApprovals() {
       setPayments(data || []);
     } catch (error) {
       console.error('Failed to fetch pending payments:', error);
+      toast.error('Failed to fetch pending payments');
     } finally {
       setLoading(false);
     }
@@ -38,9 +40,8 @@ export function AdminPaymentApprovals() {
   }, []);
 
   const handleApprove = async (payment: any) => {
-    if (!confirm('Are you sure you want to approve this payment? This will confirm the booking.')) return;
     setProcessing(true);
-    try {
+    const promise = (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       await adminService.verifyPayment(
         payment.id, 
@@ -53,17 +54,24 @@ export function AdminPaymentApprovals() {
       );
       setSelectedPayment(null);
       fetchPayments();
-    } catch (error) {
-      alert('Failed to approve payment');
+    })();
+
+    toast.promise(promise, {
+      loading: 'Approving payment...',
+      success: 'Payment approved successfully',
+      error: 'Failed to approve payment'
+    });
+    
+    try {
+      await promise;
     } finally {
       setProcessing(false);
     }
   };
 
   const handleReject = async (payment: any) => {
-    if (!confirm('Are you sure you want to reject this payment?')) return;
     setProcessing(true);
-    try {
+    const promise = (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       await adminService.verifyPayment(
         payment.id, 
@@ -73,8 +81,16 @@ export function AdminPaymentApprovals() {
       );
       setSelectedPayment(null);
       fetchPayments();
-    } catch (error) {
-      alert('Failed to reject payment');
+    })();
+
+    toast.promise(promise, {
+      loading: 'Rejecting payment...',
+      success: 'Payment rejected successfully',
+      error: 'Failed to reject payment'
+    });
+
+    try {
+      await promise;
     } finally {
       setProcessing(false);
     }

@@ -21,8 +21,8 @@ const TIER_CONFIG: Record<string, any> = {
   'Bronze': {
     icon: Star,
     color: 'text-orange-600 dark:text-orange-400',
-    bg: 'bg-orange-50 dark:bg-orange-900/20',
-    border: 'border-orange-200 dark:border-orange-800',
+    bg: 'bg-orange-50/30 dark:bg-orange-900/10',
+    border: 'border-orange-200/50 dark:border-orange-800/30',
     next: 'Silver',
     target: 5,
     benefits: ['Standard Support', 'Standard Insurance', 'Access to Economy Fleet']
@@ -30,8 +30,8 @@ const TIER_CONFIG: Record<string, any> = {
   'Silver': {
     icon: ShieldCheck,
     color: 'text-slate-600 dark:text-slate-300',
-    bg: 'bg-slate-100 dark:bg-slate-800/40',
-    border: 'border-slate-200 dark:border-slate-700',
+    bg: 'bg-slate-100/30 dark:bg-slate-800/20',
+    border: 'border-slate-200/50 dark:border-slate-700/30',
     next: 'Gold',
     target: 15,
     benefits: ['5% Discount on all rentals', 'Priority Support', 'Access to Premium Fleet', 'Free Additional Driver']
@@ -39,8 +39,8 @@ const TIER_CONFIG: Record<string, any> = {
   'Gold': {
     icon: Crown,
     color: 'text-yellow-600 dark:text-yellow-400',
-    bg: 'bg-yellow-50 dark:bg-yellow-900/20',
-    border: 'border-yellow-200 dark:border-yellow-800',
+    bg: 'bg-yellow-50/30 dark:bg-yellow-900/10',
+    border: 'border-yellow-200/50 dark:border-yellow-800/30',
     next: 'Platinum',
     target: 30,
     benefits: ['10% Discount on all rentals', 'VIP Support', 'Access to Luxury Fleet', 'Complimentary Car Wash', 'Free Airport Delivery']
@@ -48,8 +48,8 @@ const TIER_CONFIG: Record<string, any> = {
   'Platinum': {
     icon: Gem,
     color: 'text-purple-600 dark:text-purple-400',
-    bg: 'bg-purple-50 dark:bg-purple-900/20',
-    border: 'border-purple-200 dark:border-purple-800',
+    bg: 'bg-purple-50/30 dark:bg-purple-900/10',
+    border: 'border-purple-200/50 dark:border-purple-800/30',
     next: null,
     target: 100,
     benefits: ['15% Discount on all rentals', 'Personal Concierge', 'Unlimited Miles', 'Guaranteed Availability', 'Complimentary Chauffeur (4h/rental)']
@@ -113,25 +113,26 @@ export function LoyaltyRewards() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Tier Status Card */}
         <div className="lg:col-span-2 space-y-6">
-          <section className={`p-8 rounded-3xl border ${tierInfo.border} ${tierInfo.bg} relative overflow-hidden`}>
+          <section className={`p-8 rounded-3xl border ${tierInfo.border} bg-card relative overflow-hidden shadow-sm transition-colors`}>
+            <div className={`absolute inset-0 ${tierInfo.bg} transition-colors`} />
             <div className="relative z-10">
               <div className="flex items-center gap-4 mb-6">
-                <div className={`w-16 h-16 rounded-2xl ${tierInfo.bg} border ${tierInfo.border} flex items-center justify-center shadow-sm`}>
+                <div className={`w-16 h-16 rounded-2xl bg-card border ${tierInfo.border} flex items-center justify-center shadow-sm transition-colors`}>
                   <tierInfo.icon className={tierInfo.color} size={32} />
                 </div>
                 <div>
-                  <p className="text-sm font-bold opacity-60 uppercase tracking-wider">Current Status</p>
-                  <h3 className={`text-3xl font-black ${tierInfo.color}`}>{currentTier} Member</h3>
+                  <p className="text-[10px] font-black opacity-40 uppercase tracking-[0.2em] text-foreground">Current Status</p>
+                  <h3 className={`text-3xl font-black ${tierInfo.color} tracking-tight`}>{currentTier} Member</h3>
                 </div>
               </div>
 
               {tierInfo.next && (
                 <div className="space-y-3 mb-8">
                   <div className="flex justify-between items-end text-sm">
-                    <span className="font-bold opacity-60">Progress to {tierInfo.next}</span>
-                    <span className="font-black">{status?.completed_bookings} / {tierInfo.target} Bookings</span>
+                    <span className="font-bold opacity-60 text-foreground">Progress to {tierInfo.next}</span>
+                    <span className="font-black text-foreground">{status?.completed_bookings || 0} / {tierInfo.target} Bookings</span>
                   </div>
-                  <div className="h-3 bg-white/50 rounded-full overflow-hidden border border-white/20">
+                  <div className="h-3 bg-muted/50 rounded-full overflow-hidden border border-border/50">
                     <motion.div 
                       initial={{ width: 0 }}
                       animate={{ width: `${progress}%` }}
@@ -139,7 +140,7 @@ export function LoyaltyRewards() {
                       className={`h-full bg-gradient-to-r from-primary to-primary/60 rounded-full`}
                     />
                   </div>
-                  <p className="text-xs font-medium opacity-60 italic">
+                  <p className="text-xs font-medium opacity-60 italic text-foreground">
                     Just {remaining} more completed bookings to reach {tierInfo.next}!
                   </p>
                 </div>

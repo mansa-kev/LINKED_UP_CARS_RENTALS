@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
+import { useTheme } from '../../contexts/ThemeContext';
 import { 
   LayoutDashboard, 
   Car, 
@@ -80,21 +81,9 @@ const navGroups = [
 export function FleetLayout() {
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    const saved = localStorage.getItem('fleet-theme');
-    if (saved) return saved === 'dark';
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
-  });
-
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('fleet-theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('fleet-theme', 'light');
-    }
-  }, [isDarkMode]);
+  const { theme, setTheme } = useTheme();
+  const isDarkMode = theme === 'dark';
+  const setIsDarkMode = (isDark: boolean) => setTheme(isDark ? 'dark' : 'light');
 
   return (
     <div className="min-h-screen bg-background flex text-foreground transition-colors duration-300">
@@ -148,18 +137,17 @@ export function FleetLayout() {
 
         <main className="flex-1 p-8 overflow-y-auto">
           <Routes>
-            <Route path="/fleet" element={<FleetDashboard />} />
-            <Route path="/fleet/cars" element={<MyCars />} />
-            <Route path="/fleet/maintenance" element={<MaintenanceLogs />} />
-            <Route path="/fleet/damage" element={<DamageReports />} />
-            <Route path="/fleet/financials" element={<FinancialCenter />} />
-            <Route path="/fleet/expenses" element={<ExpenseTracker />} />
-            <Route path="/fleet/cars" element={<MyCars />} />
-            <Route path="/fleet/inbox" element={<MyInbox />} />
-            <Route path="/fleet/booking-requests" element={<BookingRequests />} />
-            <Route path="/fleet/vault" element={<DigitalVault />} />
-            <Route path="/fleet/growth" element={<GrowthAndInsights />} />
-            <Route path="/fleet/settings" element={<FleetSettings />} />
+            <Route index element={<FleetDashboard />} />
+            <Route path="cars" element={<MyCars />} />
+            <Route path="maintenance" element={<MaintenanceLogs />} />
+            <Route path="damage" element={<DamageReports />} />
+            <Route path="financials" element={<FinancialCenter />} />
+            <Route path="expenses" element={<ExpenseTracker />} />
+            <Route path="inbox" element={<MyInbox />} />
+            <Route path="booking-requests" element={<BookingRequests />} />
+            <Route path="vault" element={<DigitalVault />} />
+            <Route path="growth" element={<GrowthAndInsights />} />
+            <Route path="settings" element={<FleetSettings />} />
           </Routes>
         </main>
       </div>

@@ -33,7 +33,8 @@ export const adminService = {
 
       const { data: bookings, error: bError } = await supabase
         .from('bookings')
-        .select('total_amount, platform_commission, status, created_at, car_id, client_id, cars(make, model, year)');
+        .select('total_amount, platform_commission, status, created_at, car_id, client_id, cars(make, model, year)')
+        .gte('created_at', previousStartDate.toISOString());
       if (bError) throw bError;
 
       const { data: cars, error: cError } = await supabase
@@ -172,18 +173,23 @@ export const adminService = {
   },
 
   // --- Bookings ---
-  getBookings: async () => {
-    const { data, error } = await supabase
+  getBookings: async (page: number = 1, pageSize: number = 20) => {
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+
+    const { data, error, count } = await supabase
       .from('bookings')
       .select(`
         *,
         cars (*),
         client:user_profiles!bookings_client_id_fkey (*),
         fleet_owner:user_profiles!bookings_fleet_owner_id_fkey (*)
-      `)
-      .order('created_at', { ascending: false });
+      `, { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(from, to);
+
     if (error) return handleSupabaseError(error, 'getBookings');
-    return data;
+    return { data, count };
   },
 
   updateBookingStatus: async (id: string, status: string) => {
@@ -197,16 +203,24 @@ export const adminService = {
   },
 
   // --- Cars ---
-  getCars: async () => {
-    const { data, error } = await supabase
+  getCars: async (page: number = 1, pageSize: number = 20) => {
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+
+    const { data, error, count } = await supabase
       .from('cars')
       .select(`
         *,
-        fleet_owner:user_profiles (*)
-      `)
-      .order('created_at', { ascending: false });
+        fleet_owner:user_profiles (
+          *,
+          fleet_owner_settings (*)
+        )
+      `, { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(from, to);
+
     if (error) return handleSupabaseError(error, 'getCars');
-    return data;
+    return { data, count };
   },
 
   uploadCarImage: async (file: File): Promise<string> => {
@@ -360,7 +374,7 @@ export const adminService = {
         *,
         fleet_owner_settings (*),
         cars (id),
-        bookings (total_amount, status)
+        bookings!bookings_fleet_owner_id_fkey (total_amount, status)
       `)
       .eq('role', 'fleet_owner');
       
@@ -891,7 +905,7 @@ export const adminService = {
         .select('*');
       if (mError) throw mError;
 
-      return cars.map(car => {
+      return (cars || []).map(car => {
         const carBookings = bookings.filter(b => b.car_id === car.id);
         const carMaintenance = maintenance.filter(m => m.car_id === car.id);
         
@@ -973,8 +987,8 @@ export const adminService = {
       .from('messages')
       .select(`
         *,
-        sender:user_profiles!sender_id (*),
-        receiver:user_profiles!receiver_id (*)
+        sender:user_profiles!sender_id(*),
+        receiver:user_profiles!receiver_id(*)
       `)
       .order('created_at', { ascending: false });
     if (error) return handleSupabaseError(error, 'getMessages');
@@ -1062,7 +1076,7 @@ export const adminService = {
       .select(`
         *,
         bookings (*),
-        client:user_profiles (*)
+        client:user_profiles!pending_payments_client_id_fkey (*)
       `)
       .order('submitted_at', { ascending: false });
     if (error) return handleSupabaseError(error, 'getPendingPayments');
@@ -1144,7 +1158,7 @@ export const adminService = {
       .select(`
         *,
         car:cars (*),
-        user:user_profiles (*)
+        user:user_profiles!incidents_user_id_fkey (*)
       `)
       .order('created_at', { ascending: false });
     if (error) return handleSupabaseError(error, 'getIncidents');

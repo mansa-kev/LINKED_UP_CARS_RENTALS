@@ -18,6 +18,7 @@ import {
   X,
   FileDown
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { useDropzone } from 'react-dropzone';
 import { supabase } from '../../lib/supabase';
 
@@ -62,19 +63,19 @@ export function AdminContractManager() {
       const filePath = `contracts/${fileName}`;
 
       const { error: uploadError, data } = await supabase.storage
-        .from('admin-assets')
+        .from('public_assets')
         .upload(filePath, file);
 
       if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage
-        .from('admin-assets')
+        .from('public_assets')
         .getPublicUrl(filePath);
 
       setFormData(prev => ({ ...prev, pdf_url: publicUrl }));
     } catch (error) {
       console.error('Upload error:', error);
-      alert('Failed to upload PDF');
+      toast.error('Failed to upload PDF');
     } finally {
       setUploading(false);
     }
@@ -90,11 +91,11 @@ export function AdminContractManager() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.pdf_url) {
-      alert('Please upload a PDF first');
+      toast.error('Please upload a PDF first');
       return;
     }
 
-    try {
+    const promise = (async () => {
       // If activating this contract, deactivate others
       if (formData.is_active) {
         await supabase
@@ -111,23 +112,30 @@ export function AdminContractManager() {
       setIsAdding(false);
       setFormData({ version: '', pdf_url: '', is_active: false });
       fetchContracts();
-    } catch (error) {
-      alert('Failed to save contract');
-    }
+    })();
+
+    toast.promise(promise, {
+      loading: 'Saving contract version...',
+      success: 'Contract version saved successfully',
+      error: 'Failed to save contract'
+    });
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this contract version?')) return;
-    try {
+    const promise = (async () => {
       await adminService.deleteContract(id);
       fetchContracts();
-    } catch (error) {
-      alert('Failed to delete contract');
-    }
+    })();
+
+    toast.promise(promise, {
+      loading: 'Deleting contract version...',
+      success: 'Contract version deleted successfully',
+      error: 'Failed to delete contract'
+    });
   };
 
   const handleToggleStatus = async (id: string, currentStatus: boolean) => {
-    try {
+    const promise = (async () => {
       // If activating, deactivate others first
       if (!currentStatus) {
         await supabase
@@ -142,9 +150,13 @@ export function AdminContractManager() {
         .eq('id', id);
       
       fetchContracts();
-    } catch (error) {
-      alert('Failed to update status');
-    }
+    })();
+
+    toast.promise(promise, {
+      loading: 'Updating status...',
+      success: 'Status updated successfully',
+      error: 'Failed to update status'
+    });
   };
 
   const filteredContracts = contracts.filter(c => 

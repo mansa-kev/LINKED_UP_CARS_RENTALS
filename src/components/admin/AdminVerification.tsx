@@ -16,6 +16,7 @@ import {
   AlertCircle,
   Loader2
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 // --- Types ---
 
@@ -128,6 +129,7 @@ export function AdminVerification() {
       setVerifications(formatted);
     } catch (error) {
       console.error('Failed to fetch verifications:', error);
+      toast.error('Failed to fetch verifications');
     } finally {
       setLoading(false);
     }
@@ -138,7 +140,7 @@ export function AdminVerification() {
   }, []);
 
   const handleApprove = async (item: VerificationItem) => {
-    try {
+    const promise = (async () => {
       if (item.type === 'driver') await adminService.updateDriverStatus(item.id, 'active');
       else if (item.type === 'fleet_owner') await adminService.updateFleetOwnerStatus(item.id, 'active');
       else if (item.type === 'car') await adminService.updateCarStatus(item.id, 'available');
@@ -148,10 +150,13 @@ export function AdminVerification() {
         await adminService.approveClientDocument(item.id, user.id);
       }
       fetchVerifications();
-      alert('Approved successfully!');
-    } catch (error) {
-      alert('Failed to approve');
-    }
+    })();
+
+    toast.promise(promise, {
+      loading: 'Approving...',
+      success: 'Approved successfully!',
+      error: 'Failed to approve'
+    });
   };
 
   const filteredVerifications = verifications.filter(v => 

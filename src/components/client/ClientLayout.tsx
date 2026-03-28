@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
+import { useTheme } from '../../contexts/ThemeContext';
 import { 
   LayoutDashboard, 
   Car, 
@@ -52,21 +53,9 @@ const navGroups = [
 export function ClientLayout() {
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    const saved = localStorage.getItem('client-theme');
-    if (saved) return saved === 'dark';
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
-  });
-
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('client-theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('client-theme', 'light');
-    }
-  }, [isDarkMode]);
+  const { theme, setTheme } = useTheme();
+  const isDarkMode = theme === 'dark';
+  const setIsDarkMode = (isDark: boolean) => setTheme(isDark ? 'dark' : 'light');
 
   return (
     <div className="min-h-screen bg-background flex text-foreground transition-colors duration-300">
@@ -120,13 +109,13 @@ export function ClientLayout() {
 
         <main className="flex-1 p-8 overflow-y-auto">
           <Routes>
-            <Route path="/client" element={<Dashboard />} />
-            <Route path="/client/bookings" element={<MyBookings />} />
-            <Route path="/client/profile" element={<MyProfile />} />
-            <Route path="/client/glovebox" element={<DigitalGlovebox />} />
-            <Route path="/client/rewards" element={<LoyaltyRewards />} />
-            <Route path="/client/inbox" element={<MyInbox />} />
-            <Route path="/client/settings" element={<Settings />} />
+            <Route index element={<Dashboard />} />
+            <Route path="bookings" element={<MyBookings />} />
+            <Route path="profile" element={<MyProfile />} />
+            <Route path="glovebox" element={<DigitalGlovebox />} />
+            <Route path="rewards" element={<LoyaltyRewards />} />
+            <Route path="inbox" element={<MyInbox />} />
+            <Route path="settings" element={<Settings />} />
           </Routes>
         </main>
       </div>

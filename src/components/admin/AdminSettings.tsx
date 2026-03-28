@@ -14,6 +14,7 @@ import {
   Trash2,
   Loader2
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 // --- Components ---
 
@@ -45,33 +46,41 @@ export function AdminSettings() {
   }, []);
 
   const handleUpdateSetting = async (key: string, value: any) => {
-    try {
-      await adminService.updateSetting(key, value);
-      fetchData();
-    } catch (error) {
-      alert('Failed to update setting');
-    }
+    const promise = adminService.updateSetting(key, value).then(() => fetchData());
+    
+    toast.promise(promise, {
+      loading: 'Updating setting...',
+      success: 'Setting updated successfully',
+      error: 'Failed to update setting'
+    });
   };
 
   const handleAddAdmin = async () => {
     if (!newAdminEmail) return;
-    try {
+    const promise = (async () => {
       await adminService.addAdmin(newAdminEmail);
       setNewAdminEmail('');
       fetchData();
-    } catch (error) {
-      alert('Failed to add admin. Make sure the user exists.');
-    }
+    })();
+
+    toast.promise(promise, {
+      loading: 'Adding administrator...',
+      success: 'Administrator added successfully',
+      error: 'Failed to add admin. Make sure the user exists.'
+    });
   };
 
   const handleRemoveAdmin = async (id: string) => {
-    if (!window.confirm('Are you sure you want to remove this admin?')) return;
-    try {
+    const promise = (async () => {
       await adminService.removeAdmin(id);
       fetchData();
-    } catch (error) {
-      alert('Failed to remove admin');
-    }
+    })();
+
+    toast.promise(promise, {
+      loading: 'Removing administrator...',
+      success: 'Administrator removed successfully',
+      error: 'Failed to remove admin'
+    });
   };
 
   const getSettingValue = (key: string, defaultValue: any) => {

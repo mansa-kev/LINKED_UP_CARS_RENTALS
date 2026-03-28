@@ -170,7 +170,7 @@ export function AdminDashboard() {
             </div>
           </div>
           <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
               <LineChart data={revenueData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
                 <XAxis 
@@ -217,7 +217,7 @@ export function AdminDashboard() {
         <div className="bg-card p-8 rounded-2xl border border-border shadow-sm">
           <h3 className="font-bold text-lg mb-8">Booking Status</h3>
           <div className="h-[240px] w-full relative">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
               <PieChart>
                 <Pie
                   data={bookingStatusData}
@@ -259,7 +259,7 @@ export function AdminDashboard() {
         <div className="bg-card p-8 rounded-2xl border border-border shadow-sm">
           <h3 className="font-bold text-lg mb-8">Top 5 Most Booked Cars</h3>
           <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
               <BarChart data={stats?.topCars || []} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="var(--border)" />
                 <XAxis type="number" hide />

@@ -20,6 +20,7 @@ import {
   Mail,
   Clock
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 // --- Types ---
 
@@ -65,6 +66,9 @@ const StatusBadge = ({ status }: { status: BookingStatus }) => {
 
 export function AdminBookings() {
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [page, setPage] = useState(1);
+  const pageSize = 20;
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<BookingStatus | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -84,10 +88,14 @@ export function AdminBookings() {
   const fetchBookings = async () => {
     setLoading(true);
     try {
-      const data = await adminService.getBookings();
-      setBookings(data || []);
+      const result = await adminService.getBookings(page, pageSize);
+      if (result && 'data' in result) {
+        setBookings(result.data || []);
+        setTotalCount(result.count || 0);
+      }
     } catch (error) {
       console.error('Failed to fetch bookings:', error);
+      toast.error('Failed to fetch bookings');
     } finally {
       setLoading(false);
     }
@@ -95,23 +103,27 @@ export function AdminBookings() {
 
   useEffect(() => {
     fetchBookings();
-  }, []);
+  }, [page]);
 
   const handleUpdateStatus = async (id: string, status: BookingStatus) => {
-    try {
+    const promise = (async () => {
       await adminService.updateBookingStatus(id, status);
       fetchBookings(); // Refresh list
       if (selectedBooking && selectedBooking.id === id) {
         setSelectedBooking({ ...selectedBooking, status });
       }
-    } catch (error) {
-      alert('Failed to update booking status');
-    }
+    })();
+
+    toast.promise(promise, {
+      loading: 'Updating booking status...',
+      success: 'Booking status updated successfully',
+      error: 'Failed to update booking status'
+    });
   };
 
   const handleExtendBooking = async () => {
     if (!selectedBooking) return;
-    try {
+    const promise = (async () => {
       // Calculate new end date and amount
       const currentEndDate = new Date(selectedBooking.end_date);
       currentEndDate.setDate(currentEndDate.getDate() + extendDays);
@@ -122,13 +134,17 @@ export function AdminBookings() {
       const newTotal = selectedBooking.total_amount + additionalAmount;
 
       // In a real app, you would call a specific service method to extend
-      // For now, we'll just alert to simulate it
-      alert(`Booking extended by ${extendDays} days. New total: $${newTotal.toLocaleString()}`);
+      // For now, we'll just simulate it
       setIsExtending(false);
       fetchBookings();
-    } catch (error) {
-      alert('Failed to extend booking');
-    }
+      return { extendDays, newTotal };
+    })();
+
+    toast.promise(promise, {
+      loading: 'Extending booking...',
+      success: (data) => `Booking extended by ${data.extendDays} days. New total: $${data.newTotal.toLocaleString()}`,
+      error: 'Failed to extend booking'
+    });
   };
 
   const filteredBookings = bookings.filter(b => {
@@ -357,12 +373,29 @@ export function AdminBookings() {
           </div>
         )}
 
-        {/* Pagination Placeholder */}
+        {/* Pagination */}
         <div className="px-6 py-4 border-t border-border flex items-center justify-between bg-muted/10">
-          <span className="text-xs text-muted-foreground font-medium">Showing {filteredBookings.length} of {bookings.length} entries</span>
+          <span className="text-xs text-muted-foreground font-medium">
+            Showing {bookings.length} of {totalCount} entries
+          </span>
           <div className="flex gap-2">
-            <button className="px-3 py-1 border border-border rounded-md text-xs font-bold disabled:opacity-50" disabled>Previous</button>
-            <button className="px-3 py-1 border border-border rounded-md text-xs font-bold disabled:opacity-50" disabled>Next</button>
+            <button 
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="px-3 py-1 border border-border rounded-md text-xs font-bold disabled:opacity-50 hover:bg-muted transition-colors"
+            >
+              Previous
+            </button>
+            <div className="flex items-center gap-1">
+              <span className="text-xs font-bold px-2">Page {page}</span>
+            </div>
+            <button 
+              onClick={() => setPage(p => p + 1)}
+              disabled={bookings.length < pageSize}
+              className="px-3 py-1 border border-border rounded-md text-xs font-bold disabled:opacity-50 hover:bg-muted transition-colors"
+            >
+              Next
+            </button>
           </div>
         </div>
       </div>
@@ -572,13 +605,13 @@ export function AdminBookings() {
             
             <div className="p-6 border-t border-border bg-muted/10 flex flex-wrap gap-3 justify-end">
               <button 
-                onClick={() => alert('Invoice generated and sent to client.')}
+                onClick={() => toast.success('Invoice generated and sent to client.')}
                 className="px-4 py-2 rounded-lg font-bold border border-border bg-card hover:bg-muted transition-colors flex items-center gap-2"
               >
                 <FileText size={16} /> Generate Invoice
               </button>
               <button 
-                onClick={() => alert('Reminder sent to client.')}
+                onClick={() => toast.success('Reminder sent to client.')}
                 className="px-4 py-2 rounded-lg font-bold border border-border bg-card hover:bg-muted transition-colors flex items-center gap-2"
               >
                 <Mail size={16} /> Send Reminder
@@ -605,9 +638,7 @@ export function AdminBookings() {
               {['pending', 'confirmed'].includes(selectedBooking.status) && (
                 <button 
                   onClick={() => {
-                    if (confirm('Are you sure you want to cancel this booking? Cancellation policies will apply.')) {
-                      handleUpdateStatus(selectedBooking.id, 'cancelled');
-                    }
+                    handleUpdateStatus(selectedBooking.id, 'cancelled');
                   }}
                   className="px-6 py-2 rounded-lg font-bold bg-error text-white hover:bg-error/90 transition-colors flex items-center gap-2"
                 >

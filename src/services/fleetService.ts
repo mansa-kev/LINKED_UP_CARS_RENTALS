@@ -1,6 +1,27 @@
 import { supabase, handleSupabaseError } from '../lib/supabase';
 
 export const fleetService = {
+  // --- Public Fleet ---
+  getAllCars: async () => {
+    const { data, error } = await supabase
+      .from('cars')
+      .select('*')
+      .eq('status', 'available')
+      .order('created_at', { ascending: false });
+    if (error) return handleSupabaseError(error, 'getAllCars');
+    return data;
+  },
+
+  getCarById: async (id: string) => {
+    const { data, error } = await supabase
+      .from('cars')
+      .select('*')
+      .eq('id', id)
+      .single();
+    if (error) return handleSupabaseError(error, 'getCarById');
+    return data;
+  },
+
   // --- Dashboard ---
   getDashboardStats: async (fleetOwnerId: string) => {
     try {

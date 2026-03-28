@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
+import { Toaster } from 'sonner';
+import { useTheme } from '../contexts/ThemeContext';
 import { 
   LayoutDashboard, 
   Calendar, 
@@ -118,7 +120,7 @@ const AdminSidebar = ({
 
   return (
     <aside 
-      className={`fixed left-0 top-0 h-screen bg-white dark:bg-[#1E1E1E] border-r border-border transition-all duration-300 z-40 flex flex-col ${
+      className={`fixed left-0 top-0 h-screen bg-card border-r border-border transition-all duration-300 z-40 flex flex-col ${
         isCollapsed ? 'w-20' : 'w-72'
       }`}
     >
@@ -148,7 +150,7 @@ const AdminSidebar = ({
                     to={item.id === 'dashboard' ? '/admin' : `/admin/${item.id}`}
                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all relative group ${
                       isActive
-                        ? 'bg-primary-light dark:bg-primary-dark text-primary'
+                        ? 'bg-primary/10 text-primary'
                         : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                     }`}
                   >
@@ -192,21 +194,9 @@ const AdminSidebar = ({
 
 export function AdminPortal() {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    const saved = localStorage.getItem('admin-theme');
-    if (saved) return saved === 'dark';
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
-  });
-
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('admin-theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('admin-theme', 'light');
-    }
-  }, [isDarkMode]);
+  const { theme, setTheme } = useTheme();
+  const isDarkMode = theme === 'dark';
+  const setIsDarkMode = (isDark: boolean) => setTheme(isDark ? 'dark' : 'light');
 
   return (
     <div className="min-h-screen bg-background flex text-foreground transition-colors duration-300">
@@ -226,32 +216,29 @@ export function AdminPortal() {
           {/* Module Content Area */}
           <div className="max-w-[1600px] mx-auto">
             <Routes>
-              {/* Redirect root to /admin */}
-              <Route path="/" element={<Navigate to="/admin" replace />} />
-              
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/admin/bookings" element={<AdminBookings />} />
-              <Route path="/admin/cars" element={<AdminCars />} />
-              <Route path="/admin/users" element={<AdminUsers />} />
-              <Route path="/admin/drivers" element={<AdminDrivers />} />
-              <Route path="/admin/fleet-owners" element={<AdminFleetOwners />} />
-              <Route path="/admin/verification" element={<AdminVerification />} />
-              <Route path="/admin/financials" element={<AdminFinancials />} />
-              <Route path="/admin/car-earnings" element={<AdminCarEarnings />} />
-              <Route path="/admin/pricing" element={<AdminPricing />} />
-              <Route path="/admin/reports" element={<AdminReports />} />
-              <Route path="/admin/inbox" element={<AdminInbox />} />
-              <Route path="/admin/reviews" element={<AdminReviews />} />
-              <Route path="/admin/growth" element={<AdminGrowthTools />} />
-              <Route path="/admin/incident" element={<AdminIncidentCommand />} />
-              <Route path="/admin/hero" element={<AdminHeroContent />} />
-              <Route path="/admin/contracts" element={<AdminContractManager />} />
-              <Route path="/admin/system-health" element={<AdminSystemHealth />} />
-              <Route path="/admin/settings" element={<AdminSettings />} />
-              <Route path="/admin/logout" element={<AdminLogout />} />
+              <Route index element={<AdminDashboard />} />
+              <Route path="bookings" element={<AdminBookings />} />
+              <Route path="cars" element={<AdminCars />} />
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="drivers" element={<AdminDrivers />} />
+              <Route path="fleet-owners" element={<AdminFleetOwners />} />
+              <Route path="verification" element={<AdminVerification />} />
+              <Route path="financials" element={<AdminFinancials />} />
+              <Route path="car-earnings" element={<AdminCarEarnings />} />
+              <Route path="pricing" element={<AdminPricing />} />
+              <Route path="reports" element={<AdminReports />} />
+              <Route path="inbox" element={<AdminInbox />} />
+              <Route path="reviews" element={<AdminReviews />} />
+              <Route path="growth" element={<AdminGrowthTools />} />
+              <Route path="incident" element={<AdminIncidentCommand />} />
+              <Route path="hero" element={<AdminHeroContent />} />
+              <Route path="contracts" element={<AdminContractManager />} />
+              <Route path="system-health" element={<AdminSystemHealth />} />
+              <Route path="settings" element={<AdminSettings />} />
+              <Route path="logout" element={<AdminLogout />} />
               
               {/* Fallback for unknown modules */}
-              <Route path="/admin/:activeModule" element={<AdminModuleFallback />} />
+              <Route path=":activeModule" element={<AdminModuleFallback />} />
             </Routes>
           </div>
         </div>

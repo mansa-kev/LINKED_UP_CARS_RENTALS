@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { adminService } from '../../services/adminService';
 import { Loader2, CheckCircle2, Clock, Wallet } from 'lucide-react';
+import { toast } from 'sonner';
 
 export function AdminPayoutEngine() {
   const [payouts, setPayouts] = useState<any[]>([]);
@@ -15,6 +16,7 @@ export function AdminPayoutEngine() {
       setPayouts(data || []);
     } catch (error) {
       console.error('Failed to fetch payouts:', error);
+      toast.error('Failed to fetch payouts');
     } finally {
       setLoading(false);
     }
@@ -25,14 +27,19 @@ export function AdminPayoutEngine() {
   }, []);
 
   const handleApproveBatch = async () => {
-    if (!confirm(`Are you sure you want to approve ${selectedPayouts.length} payouts?`)) return;
-    try {
-      await adminService.approvePayouts(selectedPayouts);
-      setSelectedPayouts([]);
-      fetchPayouts();
-    } catch (error) {
-      alert('Failed to approve payouts');
-    }
+    if (selectedPayouts.length === 0) return;
+    
+    const promise = adminService.approvePayouts(selectedPayouts);
+    
+    toast.promise(promise, {
+      loading: 'Approving payouts...',
+      success: () => {
+        setSelectedPayouts([]);
+        fetchPayouts();
+        return `${selectedPayouts.length} payouts approved successfully`;
+      },
+      error: 'Failed to approve payouts'
+    });
   };
 
   if (loading) return <div className="p-12 text-center"><Loader2 className="animate-spin mx-auto" /></div>;

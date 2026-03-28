@@ -17,6 +17,7 @@ import {
   ChevronDown,
   X
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { useDropzone } from 'react-dropzone';
 import {
   DndContext,
@@ -171,12 +172,17 @@ export function AdminHeroContent() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [heroData, carsData] = await Promise.all([
+      const [heroData, carsResult] = await Promise.all([
         adminService.getHeroContent(),
         adminService.getCars()
       ]);
       setContent(heroData || []);
-      setCars(carsData || []);
+      
+      if (carsResult && 'data' in carsResult) {
+        setCars(carsResult.data || []);
+      } else if (Array.isArray(carsResult)) {
+        setCars(carsResult);
+      }
     } catch (error) {
       console.error('Failed to fetch data:', error);
     } finally {
@@ -199,13 +205,13 @@ export function AdminHeroContent() {
       const filePath = `hero-content/${fileName}`;
 
       const { error: uploadError, data } = await supabase.storage
-        .from('admin-assets')
+        .from('public_assets')
         .upload(filePath, file);
 
       if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage
-        .from('admin-assets')
+        .from('public_assets')
         .getPublicUrl(filePath);
 
       setFormData(prev => ({
@@ -215,7 +221,7 @@ export function AdminHeroContent() {
       }));
     } catch (error) {
       console.error('Upload error:', error);
-      alert('Failed to upload file');
+      toast.error('Failed to upload file');
     } finally {
       setUploading(false);
     }
@@ -234,11 +240,11 @@ export function AdminHeroContent() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.media_url) {
-      alert('Please upload media first');
+      toast.error('Please upload media first');
       return;
     }
 
-    try {
+    const promise = (async () => {
       await adminService.createHeroContent({
         ...formData,
         display_order: content.length
@@ -253,31 +259,42 @@ export function AdminHeroContent() {
         is_active: true
       });
       fetchData();
-    } catch (error) {
-      alert('Failed to create content');
-    }
+    })();
+
+    toast.promise(promise, {
+      loading: 'Saving content...',
+      success: 'Content saved successfully',
+      error: 'Failed to create content'
+    });
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this content?')) return;
-    try {
+    const promise = (async () => {
       await adminService.deleteHeroContent(id);
       fetchData();
-    } catch (error) {
-      alert('Failed to delete content');
-    }
+    })();
+
+    toast.promise(promise, {
+      loading: 'Deleting content...',
+      success: 'Content deleted successfully',
+      error: 'Failed to delete content'
+    });
   };
 
   const handleToggleStatus = async (id: string, currentStatus: boolean) => {
-    try {
+    const promise = (async () => {
       await supabase
         .from('hero_content')
         .update({ is_active: !currentStatus })
         .eq('id', id);
       fetchData();
-    } catch (error) {
-      alert('Failed to update status');
-    }
+    })();
+
+    toast.promise(promise, {
+      loading: 'Updating status...',
+      success: 'Status updated successfully',
+      error: 'Failed to update status'
+    });
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
@@ -467,27 +484,27 @@ export function AdminHeroContent() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-border bg-muted/30">
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-muted-foreground w-20">Order</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-muted-foreground">Car Model</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-muted-foreground">Overlay Text</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-muted-foreground">Deep Link</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-muted-foreground">Status</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-muted-foreground text-right">Actions</th>
-              </tr>
-            </thead>
-            <DndContext 
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
-            >
-              <SortableContext 
-                items={content.map(c => c.id)}
-                strategy={verticalListSortingStrategy}
-              >
-                <tbody className="divide-y divide-border">
+          <DndContext 
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-border bg-muted/30">
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-muted-foreground w-20">Order</th>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-muted-foreground">Car Model</th>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-muted-foreground">Overlay Text</th>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-muted-foreground">Deep Link</th>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-muted-foreground">Status</th>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-muted-foreground text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                <SortableContext 
+                  items={content.map(c => c.id)}
+                  strategy={verticalListSortingStrategy}
+                >
                   {content.map((item) => {
                     const rowProps: any = {
                       key: item.id,
@@ -500,17 +517,17 @@ export function AdminHeroContent() {
                     };
                     return <SortableRow {...rowProps} />;
                   })}
-                  {content.length === 0 && (
-                    <tr>
-                      <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
-                        No hero content found. Click "Add New Content" to get started.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </SortableContext>
-            </DndContext>
-          </table>
+                </SortableContext>
+                {content.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
+                      No hero content found. Click "Add New Content" to get started.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </DndContext>
         </div>
       </div>
 

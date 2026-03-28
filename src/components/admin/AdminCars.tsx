@@ -25,6 +25,7 @@ import {
   ChevronRight,
   ArrowUpDown
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 // --- Types ---
 
@@ -58,7 +59,10 @@ interface CarItem {
   overtime_rate: number;
   security_deposit: number;
   created_at: string;
-  fleet_owner?: { full_name: string; company_name?: string };
+  fleet_owner?: { 
+    full_name: string; 
+    fleet_owner_settings?: Array<{ company_name?: string }>;
+  };
 }
 
 // --- Components ---
@@ -94,6 +98,9 @@ const MaintenanceBadge = ({ status }: { status: MaintenanceStatus }) => {
 
 export function AdminCars() {
   const [cars, setCars] = useState<CarItem[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [page, setPage] = useState(1);
+  const pageSize = 20;
   const [fleetOwners, setFleetOwners] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -129,14 +136,19 @@ export function AdminCars() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [carsData, ownersData] = await Promise.all([
-        adminService.getCars(),
+      const [carsResult, ownersData] = await Promise.all([
+        adminService.getCars(page, pageSize),
         adminService.getFleetOwners()
       ]);
-      setCars(carsData || []);
+      
+      if (carsResult && 'data' in carsResult) {
+        setCars(carsResult.data || []);
+        setTotalCount(carsResult.count || 0);
+      }
       setFleetOwners(ownersData || []);
     } catch (error) {
       console.error('Failed to fetch data:', error);
+      toast.error('Failed to fetch data');
     } finally {
       setLoading(false);
     }
@@ -144,12 +156,12 @@ export function AdminCars() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [page]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsUploading(true);
-    try {
+    const promise = (async () => {
       let finalPrimaryUrl = formData.primary_image_url;
       if (primaryImageFile) {
         finalPrimaryUrl = await adminService.uploadCarImage(primaryImageFile);
@@ -173,21 +185,32 @@ export function AdminCars() {
       setPrimaryImageFile(null);
       setGalleryFiles([]);
       fetchData();
-    } catch (error) {
-      alert('Failed to save car');
+    })();
+
+    toast.promise(promise, {
+      loading: selectedCar ? 'Updating car...' : 'Adding car...',
+      success: selectedCar ? 'Car updated successfully' : 'Car added successfully',
+      error: 'Failed to save car'
+    });
+    
+    try {
+      await promise;
     } finally {
       setIsUploading(false);
     }
   };
 
   const handleDeleteCar = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this car?')) return;
-    try {
+    const promise = (async () => {
       await adminService.deleteCar(id);
       fetchData();
-    } catch (error) {
-      alert('Failed to delete car');
-    }
+    })();
+
+    toast.promise(promise, {
+      loading: 'Deleting car...',
+      success: 'Car deleted successfully',
+      error: 'Failed to delete car'
+    });
   };
 
   const openAddModal = () => {
@@ -250,15 +273,19 @@ export function AdminCars() {
   };
 
   const handleUpdateMaintenance = async (id: string, maintenance_status: MaintenanceStatus) => {
-    try {
+    const promise = (async () => {
       await adminService.updateCar(id, { maintenance_status });
       fetchData();
       if (selectedCar && selectedCar.id === id) {
         setSelectedCar({ ...selectedCar, maintenance_status });
       }
-    } catch (error) {
-      alert('Failed to update maintenance status');
-    }
+    })();
+
+    toast.promise(promise, {
+      loading: 'Updating maintenance status...',
+      success: 'Maintenance status updated successfully',
+      error: 'Failed to update maintenance status'
+    });
   };
 
   const filteredCars = cars.filter(c => {
@@ -483,6 +510,32 @@ export function AdminCars() {
             <p className="text-muted-foreground">Try adjusting your search or filters.</p>
           </div>
         )}
+
+        {/* Pagination */}
+        <div className="px-6 py-4 border-t border-border flex items-center justify-between bg-muted/10">
+          <span className="text-xs text-muted-foreground font-medium">
+            Showing {cars.length} of {totalCount} entries
+          </span>
+          <div className="flex gap-2">
+            <button 
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="px-3 py-1 border border-border rounded-md text-xs font-bold disabled:opacity-50 hover:bg-muted transition-colors"
+            >
+              Previous
+            </button>
+            <div className="flex items-center gap-1">
+              <span className="text-xs font-bold px-2">Page {page}</span>
+            </div>
+            <button 
+              onClick={() => setPage(p => p + 1)}
+              disabled={cars.length < pageSize}
+              className="px-3 py-1 border border-border rounded-md text-xs font-bold disabled:opacity-50 hover:bg-muted transition-colors"
+            >
+              Next
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Car Detail Modal */}
@@ -598,7 +651,11 @@ export function AdminCars() {
                       {selectedCar.fleet_owner ? (
                         <>
                           <p className="font-bold">{selectedCar.fleet_owner.full_name}</p>
-                          {selectedCar.fleet_owner.company_name && <p className="text-sm text-muted-foreground">{selectedCar.fleet_owner.company_name}</p>}
+                          {selectedCar.fleet_owner.fleet_owner_settings?.[0]?.company_name && (
+                            <p className="text-sm text-muted-foreground">
+                              {selectedCar.fleet_owner.fleet_owner_settings[0].company_name}
+                            </p>
+                          )}
                           <button className="w-full mt-4 py-2 text-sm font-bold text-primary hover:bg-primary/5 rounded-lg transition-colors flex items-center justify-center gap-2">
                             View Owner Profile <ChevronRight size={16} />
                           </button>
@@ -917,9 +974,14 @@ export function AdminCars() {
                       <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Assign to Fleet Owner *</label>
                       <select required value={formData.fleet_owner_id} onChange={(e) => setFormData({ ...formData, fleet_owner_id: e.target.value })} className="w-full px-4 py-2 bg-background border border-border rounded-xl text-sm focus:ring-2 focus:ring-primary/50">
                         <option value="">Platform Owned (No Owner)</option>
-                        {fleetOwners.map(owner => (
-                          <option key={owner.id} value={owner.id}>{owner.full_name} ({owner.company_name || 'Individual'})</option>
-                        ))}
+                        {fleetOwners.map(owner => {
+                          const settings = owner.fleet_owner_settings?.[0] || {};
+                          return (
+                            <option key={owner.id} value={owner.id}>
+                              {owner.full_name} ({settings.company_name || 'Individual'})
+                            </option>
+                          );
+                        })}
                       </select>
                     </div>
                     <div className="space-y-2">

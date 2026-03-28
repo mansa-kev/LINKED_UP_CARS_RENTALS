@@ -155,7 +155,7 @@ export const clientService = {
   getMessages: async (clientId: string) => {
     const { data, error } = await supabase
       .from('messages')
-      .select('*, sender:sender_id(full_name, role), receiver:receiver_id(full_name, role)')
+      .select('*, sender:user_profiles!sender_id(full_name, role), receiver:user_profiles!receiver_id(full_name, role)')
       .or(`sender_id.eq.${clientId},receiver_id.eq.${clientId}`)
       .order('created_at', { ascending: false });
     if (error) return handleSupabaseError(error, 'getMessages');
